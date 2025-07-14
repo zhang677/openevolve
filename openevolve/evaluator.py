@@ -273,7 +273,7 @@ class Evaluator:
         """
         return self._pending_artifacts.pop(program_id, None)
 
-    async def _direct_evaluate(self, program_path: str) -> Dict[str, float]:
+    async def _direct_evaluate(self, program_path: str) -> EvaluationResult:
         """
         Directly evaluate a program using the evaluation function with timeout
 
@@ -295,11 +295,6 @@ class Evaluator:
 
         # Run the evaluation with timeout - let exceptions bubble up for retry handling
         result = await asyncio.wait_for(run_evaluation(), timeout=self.config.timeout)
-
-        # Validate result
-        if not isinstance(result, dict):
-            logger.warning(f"Evaluation returned non-dictionary result: {result}")
-            return {"error": 0.0}
 
         return result
 

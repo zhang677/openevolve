@@ -17,7 +17,7 @@ class EvaluationResult:
     """
 
     metrics: Dict[str, float]  # mandatory - existing contract
-    artifacts: Dict[str, Union[str, bytes]] = field(default_factory=dict)  # optional side-channel
+    artifacts: Dict[str, Union[str, bytes, bool, int, float]] = field(default_factory=dict)  # optional side-channel
 
     @classmethod
     def from_dict(cls, metrics: Dict[str, float]) -> "EvaluationResult":

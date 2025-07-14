@@ -203,7 +203,15 @@ class ProgramDatabase:
 
         # Save to disk if configured
         if self.config.db_path:
-            self._save_program(program)
+            # Get prompts for this program if they exist
+            prompts = None
+            if (
+                self.config.log_prompts
+                and self.prompts_by_program
+                and program.id in self.prompts_by_program
+            ):
+                prompts = self.prompts_by_program[program.id]
+            self._save_program(program, prompts=prompts)
 
         logger.debug(f"Added program {program.id} to island {island_idx}")
 
@@ -1393,3 +1401,8 @@ class ProgramDatabase:
         if program_id not in self.prompts_by_program:
             self.prompts_by_program[program_id] = {}
         self.prompts_by_program[program_id][template_key] = prompt
+
+        if self.config.db_path and program_id in self.programs:
+            program = self.programs[program_id]
+            prompts = self.prompts_by_program[program_id]
+            self._save_program(program, prompts=prompts)

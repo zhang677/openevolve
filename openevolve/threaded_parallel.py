@@ -226,10 +226,13 @@ class ImprovedParallelController:
                     with self.database_lock:
                         self.database.add(result.child_program, iteration=completed_iteration)
                         
+                        logger.debug(f"Storing artifacts for {result.child_program.id}") 
                         # Store artifacts if they exist
                         if result.artifacts:
+                            logger.debug(f"Artifacts: {result.artifacts}") 
                             self.database.store_artifacts(result.child_program.id, result.artifacts)
-                        
+                        else:
+                            logger.debug(f"No artifacts to store for {result.child_program.id}") 
                         # Log prompts
                         if hasattr(result, 'prompt') and result.prompt:
                             self.database.log_prompt(

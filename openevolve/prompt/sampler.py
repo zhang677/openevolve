@@ -122,6 +122,8 @@ class PromptSampler:
         artifacts_section = ""
         if self.config.include_artifacts and program_artifacts:
             artifacts_section = self._render_artifacts(program_artifacts)
+        else:
+            logger.debug(f"No artifacts to render for {program_artifacts}") 
 
         # Apply stochastic template variations if enabled
         if self.config.use_template_stochasticity:
@@ -247,7 +249,14 @@ class PromptSampler:
 
         for i, program in enumerate(reversed(selected_previous)):
             attempt_number = len(previous_programs) - i
-            changes = program.get("changes", "Unknown changes")
+            # changes = program.get("changes", "Unknown changes")
+            changes = program.get("code", "")
+            program_artifacts = program.get("artifacts_json", "")
+            if program_artifacts:
+                for key, value in program_artifacts.items():
+                    content = self._safe_decode_artifact(value)
+                    changes += f"\n{key}\n```\n{content}\n```"
+            
 
             # Format performance metrics using safe formatting
             performance_parts = []
@@ -311,9 +320,15 @@ class PromptSampler:
         for i, program in enumerate(selected_top):
             # Extract a snippet (first 10 lines) for display
             program_code = program.get("code", "")
-            program_snippet = "\n".join(program_code.split("\n")[:10])
-            if len(program_code.split("\n")) > 10:
-                program_snippet += "\n# ... (truncated for brevity)"
+            # program_snippet = "\n".join(program_code.split("\n")[:10])
+            # if len(program_code.split("\n")) > 10:
+            #     program_snippet += "\n# ... (truncated for brevity)"
+            program_snippet = program_code
+            program_artifacts = program.get("artifacts_json", "")
+            if program_artifacts:
+                for key, value in program_artifacts.items():
+                    content = self._safe_decode_artifact(value)
+                    program_snippet += f"\n{key}\n```\n{content}\n```"
 
             # Calculate a composite score using safe numeric average
             score = safe_numeric_average(program.get("metrics", {}))
@@ -364,9 +379,15 @@ class PromptSampler:
                 for i, program in enumerate(diverse_programs):
                     # Extract a snippet (first 5 lines for diversity)
                     program_code = program.get("code", "")
-                    program_snippet = "\n".join(program_code.split("\n")[:5])
-                    if len(program_code.split("\n")) > 5:
-                        program_snippet += "\n# ... (truncated)"
+                    # program_snippet = "\n".join(program_code.split("\n")[:5])
+                    # if len(program_code.split("\n")) > 5:
+                    #     program_snippet += "\n# ... (truncated)"
+                    program_snippet = program_code
+                    program_artifacts = program.get("artifacts_json", "")
+                    if program_artifacts:
+                        for key, value in program_artifacts.items():
+                            content = self._safe_decode_artifact(value)
+                            program_snippet += f"\n{key}\n```\n{content}\n```"
 
                     # Calculate a composite score using safe numeric average
                     score = safe_numeric_average(program.get("metrics", {}))
@@ -432,9 +453,15 @@ class PromptSampler:
         for i, program in enumerate(inspirations):
             # Extract a snippet (first 8 lines) for display
             program_code = program.get("code", "")
-            program_snippet = "\n".join(program_code.split("\n")[:8])
-            if len(program_code.split("\n")) > 8:
-                program_snippet += "\n# ... (truncated for brevity)"
+            # program_snippet = "\n".join(program_code.split("\n")[:8])
+            # if len(program_code.split("\n")) > 8:
+            #     program_snippet += "\n# ... (truncated for brevity)"
+            program_snippet = program_code
+            program_artifacts = program.get("artifacts_json", "")
+            if program_artifacts:
+                for key, value in program_artifacts.items():
+                    content = self._safe_decode_artifact(value)
+                    program_snippet += f"\n{key}\n```\n{content}\n```"
             
             # Calculate a composite score using safe numeric average
             score = safe_numeric_average(program.get("metrics", {}))
@@ -566,15 +593,15 @@ class PromptSampler:
         """
         if not artifacts:
             return ""
-
+        logger.info(f"Rendering artifacts: {artifacts}") 
         sections = []
 
         # Process all artifacts using .items()
         for key, value in artifacts.items():
             content = self._safe_decode_artifact(value)
             # Truncate if too long
-            if len(content) > self.config.max_artifact_bytes:
-                content = content[: self.config.max_artifact_bytes] + "\n... (truncated)"
+            # if len(content) > self.config.max_artifact_bytes:
+            #     content = content[: self.config.max_artifact_bytes] + "\n... (truncated)"
 
             sections.append(f"### {key}\n```\n{content}\n```")
 
