@@ -2,6 +2,7 @@
 Prompt sampling for OpenEvolve
 """
 
+import json
 import logging
 import random
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -253,9 +254,13 @@ class PromptSampler:
             changes = program.get("code", "")
             program_artifacts = program.get("artifacts_json", "")
             if program_artifacts:
-                for key, value in program_artifacts.items():
-                    content = self._safe_decode_artifact(value)
-                    changes += f"\n{key}\n```\n{content}\n```"
+                try:
+                    artifacts_dict = json.loads(program_artifacts)
+                    for key, value in artifacts_dict.items():
+                        content = self._safe_decode_artifact(value)
+                        changes += f"\n{key}\n```\n{content}\n```"
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.warning(f"Failed to parse artifacts_json: {e}")
             
 
             # Format performance metrics using safe formatting
@@ -326,12 +331,17 @@ class PromptSampler:
             program_snippet = program_code
             program_artifacts = program.get("artifacts_json", "")
             if program_artifacts:
-                for key, value in program_artifacts.items():
-                    content = self._safe_decode_artifact(value)
-                    program_snippet += f"\n{key}\n```\n{content}\n```"
+                try:
+                    artifacts_dict = json.loads(program_artifacts)
+                    for key, value in artifacts_dict.items():
+                        content = self._safe_decode_artifact(value)
+                        program_snippet += f"\n{key}\n```\n{content}\n```"
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.warning(f"Failed to parse artifacts_json: {e}")
 
             # Calculate a composite score using safe numeric average
-            score = safe_numeric_average(program.get("metrics", {}))
+            # score = safe_numeric_average(program.get("metrics", {}))
+            score = program.get("metrics", {})
 
             # Extract key features (this could be more sophisticated)
             key_features = program.get("key_features", [])
@@ -340,18 +350,23 @@ class PromptSampler:
                 for name, value in program.get("metrics", {}).items():
                     if isinstance(value, (int, float)):
                         try:
-                            key_features.append(f"Performs well on {name} ({value:.4f})")
+                            if value > 0.9:
+                                key_features.append(f"Performs well on {name} ({value:.4f})")
+                            elif value < 0.1:
+                                key_features.append(f"Performs poorly on {name} ({value:.4f})")
+                            else:
+                                key_features.append(f"Performance on {name} ({value:.4f})")
                         except (ValueError, TypeError):
-                            key_features.append(f"Performs well on {name} ({value})")
+                            key_features.append(f"Performance on {name} ({value})")
                     else:
-                        key_features.append(f"Performs well on {name} ({value})")
+                        key_features.append(f"Performance on {name} ({value})")
 
             key_features_str = ", ".join(key_features)
 
             top_programs_str += (
                 top_program_template.format(
                     program_number=i + 1,
-                    score=f"{score:.4f}",
+                    score=score,
                     language=language,
                     program_snippet=program_snippet,
                     key_features=key_features_str,
@@ -385,9 +400,13 @@ class PromptSampler:
                     program_snippet = program_code
                     program_artifacts = program.get("artifacts_json", "")
                     if program_artifacts:
-                        for key, value in program_artifacts.items():
-                            content = self._safe_decode_artifact(value)
-                            program_snippet += f"\n{key}\n```\n{content}\n```"
+                        try:
+                            artifacts_dict = json.loads(program_artifacts)
+                            for key, value in artifacts_dict.items():
+                                content = self._safe_decode_artifact(value)
+                                program_snippet += f"\n{key}\n```\n{content}\n```"
+                        except (json.JSONDecodeError, TypeError) as e:
+                            logger.warning(f"Failed to parse artifacts_json: {e}")
 
                     # Calculate a composite score using safe numeric average
                     score = safe_numeric_average(program.get("metrics", {}))
@@ -459,9 +478,13 @@ class PromptSampler:
             program_snippet = program_code
             program_artifacts = program.get("artifacts_json", "")
             if program_artifacts:
-                for key, value in program_artifacts.items():
-                    content = self._safe_decode_artifact(value)
-                    program_snippet += f"\n{key}\n```\n{content}\n```"
+                try:
+                    artifacts_dict = json.loads(program_artifacts)
+                    for key, value in artifacts_dict.items():
+                        content = self._safe_decode_artifact(value)
+                        program_snippet += f"\n{key}\n```\n{content}\n```"
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.warning(f"Failed to parse artifacts_json: {e}")
             
             # Calculate a composite score using safe numeric average
             score = safe_numeric_average(program.get("metrics", {}))
